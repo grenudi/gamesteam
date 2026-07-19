@@ -6,24 +6,24 @@
 # The script (./gamesteam.sh) is installed verbatim — it stays a complete,
 # standalone, distro-agnostic program. We shellcheck it at build time, pin the
 # tools it calls onto its PATH, and ship the man page + shell completions.
-{
-  lib,
-  runCommandLocal,
-  makeWrapper,
-  shellcheck,
-  gamemode,
-  mangohud,
-  power-profiles-daemon,
-  coreutils,
-  gawk,
-  gnugrep,
-  gnused,
-  # Override these to vendor your own copies.
-  src ? ./gamesteam.sh,
-  man ? ./gamesteam.1,
-  bashCompletion ? ./completions/gamesteam.bash,
-  zshCompletion ? ./completions/gamesteam.zsh,
-  fishCompletion ? ./completions/gamesteam.fish,
+{ lib
+, runCommandLocal
+, makeWrapper
+, shellcheck
+, gamemode
+, mangohud
+, power-profiles-daemon
+, coreutils
+, gawk
+, gnugrep
+, gnused
+, # Override these to vendor your own copies.
+  scriptSrc ? ./gamesteam.sh
+, man ? ./gamesteam.1
+, bashCompletion ? ./completions/gamesteam.bash
+, zshCompletion ? ./completions/gamesteam.zsh
+, fishCompletion ? ./completions/gamesteam.fish
+,
 }:
 
 runCommandLocal "gamesteam"
@@ -38,7 +38,7 @@ runCommandLocal "gamesteam"
   };
 }
   ''
-    install -Dm755 ${src} $out/bin/gamesteam
+    install -Dm755 ${scriptSrc} $out/bin/gamesteam
 
     # Fail the build on any shellcheck regression (default profile).
     shellcheck $out/bin/gamesteam
