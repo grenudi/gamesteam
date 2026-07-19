@@ -19,7 +19,7 @@
 , gnused
 , # Override these to vendor your own copies.
   scriptSrc ? ./gamesteam.sh
-, man ? ./gamesteam.1
+, manPage ? ./gamesteam.1
 , bashCompletion ? ./completions/gamesteam.bash
 , zshCompletion ? ./completions/gamesteam.zsh
 , fishCompletion ? ./completions/gamesteam.fish
@@ -46,7 +46,7 @@ runCommandLocal "gamesteam"
 
     # Man page and shell completions — NixOS aggregates these directories from
     # every package in environment.systemPackages, so they "just work".
-    install -Dm644 ${man}            $out/share/man/man1/gamesteam.1
+    install -Dm644 ${manPage}            $out/share/man/man1/gamesteam.1
     install -Dm644 ${bashCompletion} $out/share/bash-completion/completions/gamesteam
     install -Dm644 ${zshCompletion}  $out/share/zsh/site-functions/_gamesteam
     install -Dm644 ${fishCompletion} $out/share/fish/vendor_completions.d/gamesteam.fish
