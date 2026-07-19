@@ -1,0 +1,222 @@
+.\" SPDX-License-Identifier: GPL-3.0-or-later
+.\" Manpage for gamesteam.
+.TH GAMESTEAM 1 "2026-07-19" "gamesteam 1.0.0" "User Commands"
+.SH NAME
+gamesteam \- universal, GPU-aware Steam/Proton launch wrapper
+.SH SYNOPSIS
+.B gamesteam
+.RI [ options ]
+.B %command%
+.br
+.B gamesteam
+.RI [ options ]
+.B \-\-
+.I command
+.br
+.B gamesteam
+.BR \-\-list\-gpus " | " \-\-help " | " \-\-version
+.SH DESCRIPTION
+.B gamesteam
+is a launch wrapper for Steam/Proton games. With no options it detects the
+available GPUs, prefers the discrete one, applies vendor-correct device
+selection and Proton/DXVK/VKD3D tuning, runs the game under
+.BR gamemoderun ,
+and switches the system to a performance power profile for the session
+(restored on exit). For integrated GPUs it also wraps the game in a
+native-resolution
+.BR gamescope (1)
+compositor with FSR upscaling; discrete GPUs render natively.
+.PP
+It is intended for Steam's per-game or global launch options:
+.PP
+.RS
+.B gamesteam %command%
+.RE
+.PP
+Every external tool is probed at runtime and skipped when absent, so the same
+script runs on any Linux distribution. GPUs and displays are read from
+.IR sysfs ;
+no
+.BR lspci (8)
+is required.
+.SH OPTIONS
+.SS GPU
+.TP
+.BR \-g ", " \-\-graphics " " \fItarget\fR
+Select which GPU to render on. Default:
+.BR auto .
+.I target
+is one of
+.BR auto ", " discrete ", " integrated ", " nvidia ", " amd ", " intel ", "
+.BR integrated\-intel ", " integrated\-amd .
+.TP
+.B \-\-force\-discrete
+Alias for
+.BR "\-g discrete" .
+.TP
+.B \-\-force\-integrated
+Alias for
+.BR "\-g integrated" .
+.TP
+.B \-\-list\-gpus
+Print the detected GPUs (index, vendor, PCI address, type, boot_vga) and exit.
+.SS gamescope
+By default gamescope is enabled automatically for integrated GPUs, where
+reducing the internal render resolution and FSR-upscaling to native is the
+biggest performance win, and left off for discrete GPUs, which render at native
+resolution. The options in this section apply only when gamescope is active.
+.TP
+.B \-\-gamescope
+Always run the game inside a native-resolution gamescope compositor.
+.TP
+.B \-\-no\-gamescope
+Never use gamescope.
+.TP
+.BR \-\-res " " \fIWxH\fR
+gamescope output resolution. Default: auto-detect the connected display's
+native resolution.
+.TP
+.BR \-\-refresh " " \fIHz\fR
+Refresh-rate cap. Default: the display's native refresh.
+.TP
+.BR \-\-render\-scale " " \fIfactor\fR
+Internal render scale, 0.1 to 1.0. Default: 1.0 for discrete GPUs, 0.75 for
+integrated. A value below 1.0 enables FSR upscaling to the output resolution.
+.TP
+.B \-\-native
+Render at the output resolution with no upscaling (equivalent to
+.BR "\-\-render\-scale 1.0" ).
+.TP
+.BR \-\-fsr ", " \-\-no\-fsr
+Force FSR upscaling on or off.
+.TP
+.B \-\-hdr
+Enable HDR output.
+.SS System
+.TP
+.B \-\-gamemode
+Wrap the game in
+.BR gamemoderun .
+Default: on when gamemode is available.
+.TP
+.B \-\-no\-gamemode
+Do not use gamemode.
+.TP
+.BR \-\-power\-profile " " \fIname\fR
+Switch to power profile
+.I name
+for the session (restored on exit). Default:
+.BR performance .
+Typical names:
+.BR performance ", " balanced ", " power\-saver .
+.TP
+.B \-\-no\-power\-profile
+Leave the power profile unchanged.
+.TP
+.BR \-\-hud ", " \-\-no\-hud
+Enable or disable the MangoHud overlay. Default: off, or on if
+.B MANGOHUD=1
+is set in the environment.
+.SS Tuning
+.TP
+.B \-\-cachyos
+Apply CachyOS-Proton tuning.
+.TP
+.B \-\-no\-cachyos
+Disable CachyOS tuning. Default: auto-detect (see
+.BR NOTES ).
+.SS General
+.TP
+.BR \-n ", " \-\-dry\-run
+Print the resolved plan (detected GPUs, selection, environment, final command)
+and exit without launching anything.
+.TP
+.BR \-v ", " \-\-verbose
+Explain detection and decisions on standard error.
+.TP
+.BR \-q ", " \-\-quiet
+Suppress warnings.
+.TP
+.BR \-h ", " \-\-help
+Show a usage summary and exit.
+.TP
+.BR \-V ", " \-\-version
+Show the version and exit.
+.SH ENVIRONMENT
+.TP
+.B MANGOHUD
+If set to a non-zero value, start with the MangoHud overlay (same as
+.BR \-\-hud ).
+.TP
+.B GAMESTEAM_SYSFS
+Directory to read GPUs and displays from instead of
+.IR /sys .
+Intended for testing.
+.SH FILES
+.TP
+.I /etc/gamesteam/config
+System-wide default options.
+.TP
+.I $XDG_CONFIG_HOME/gamesteam/config
+Per-user default options (defaults to
+.IR ~/.config/gamesteam/config ).
+.PP
+Both files are shell fragments that set the option variables (for example
+.BR "GRAPHICS=nvidia" " or " "USE_GAMESCOPE=on" ).
+Command-line flags always override them.
+.SH EXAMPLES
+.TP
+.B gamesteam %command%
+Auto-detect, render on the discrete GPU, run under gamemode.
+.TP
+.B gamesteam \-g nvidia \-\-gamescope %command%
+Force the NVIDIA GPU and wrap the game in gamescope.
+.TP
+.B gamesteam \-\-force\-integrated \-\-gamescope \-\-render\-scale 0.7 %command%
+Use the integrated GPU, rendering at 70% and FSR-upscaling to native.
+.TP
+.B gamesteam \-\-no\-power\-profile \-\-no\-gamemode %command%
+Apply only the GPU/Proton environment.
+.TP
+.B gamesteam \-n \-v \-\- /bin/true
+Print the plan for the current machine without launching anything.
+.SH EXIT STATUS
+.TP
+.B 0
+Success (including
+.BR \-\-help ", " \-\-version ", " \-\-list\-gpus ", and " \-\-dry\-run ),
+or the exit status of the launched command.
+.TP
+.B 1
+A usage error or a failed prerequisite.
+.SH NOTES
+PROTON_* and VKD3D_* tuning takes effect on Proton-CachyOS or Proton-GE; stock
+Valve Proton ignores the CachyOS-specific variables harmlessly.
+.PP
+CachyOS mode is auto-detected via
+.IR /etc/os-release ,
+a
+.RB * \-cachyos
+kernel, or a
+.B game\-performance
+binary, so it also activates on a non-CachyOS host running the CachyOS kernel.
+.PP
+gamescope
+.B \-\-adaptive\-sync
+(VRR) only passes through when nested if the parent compositor has VRR enabled.
+NVIDIA with gamescope needs a recent driver (>= 555). Intel Arc (discrete) is
+not auto-distinguished from an Intel iGPU; use
+.B \-g intel
+to select it regardless.
+.SH SEE ALSO
+.BR gamescope (1),
+.BR gamemoderun (1),
+.BR mangohud (1),
+.BR powerprofilesctl (1)
+.SH AUTHOR
+YOUR NAME <idunerg@gmail.com>
+.SH COPYRIGHT
+Copyright \(co 2026 YOUR NAME. License GPLv3+: GNU GPL version 3 or later
+<https://gnu.org/licenses/gpl.html>. This is free software: you are free to
+change and redistribute it. There is NO WARRANTY, to the extent permitted by
+law.
